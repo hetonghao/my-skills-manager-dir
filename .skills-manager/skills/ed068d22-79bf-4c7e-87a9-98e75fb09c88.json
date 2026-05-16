@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "skill_id": "ed068d22-79bf-4c7e-87a9-98e75fb09c88",
+  "path": "database-migration",
+  "path_key": "database-migration",
+  "enabled": true,
+  "tags": [
+    "coding"
+  ],
+  "source": {
+    "type": "skillssh",
+    "ref": "wshobson/agents/database-migration",
+    "subpath": "plugins/framework-migration/skills/database-migration",
+    "branch": null
+  }
+}

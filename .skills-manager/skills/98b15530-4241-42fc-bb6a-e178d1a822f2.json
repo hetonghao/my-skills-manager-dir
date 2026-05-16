@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "skill_id": "98b15530-4241-42fc-bb6a-e178d1a822f2",
+  "path": "planning-with-files",
+  "path_key": "planning-with-files",
+  "enabled": true,
+  "tags": [
+    "agent-manager"
+  ],
+  "source": {
+    "type": "skillssh",
+    "ref": "othmanadi/planning-with-files/planning-with-files",
+    "subpath": "skills/planning-with-files",
+    "branch": null
+  }
+}
