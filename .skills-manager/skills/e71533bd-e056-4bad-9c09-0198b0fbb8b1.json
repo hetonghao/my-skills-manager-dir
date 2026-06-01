@@ -4,7 +4,9 @@
   "path": "gsap",
   "path_key": "gsap",
   "enabled": true,
-  "tags": [],
+  "tags": [
+    "前端设计"
+  ],
   "source": {
     "type": "skillssh",
     "ref": "heygen-com/hyperframes/gsap",

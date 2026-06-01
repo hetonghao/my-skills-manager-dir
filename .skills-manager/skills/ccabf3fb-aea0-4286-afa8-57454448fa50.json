@@ -5,7 +5,8 @@
   "path_key": "high-end-visual-design",
   "enabled": true,
   "tags": [
-    "taste-skill"
+    "taste-skill",
+    "前端设计"
   ],
   "source": {
     "type": "skillssh",
