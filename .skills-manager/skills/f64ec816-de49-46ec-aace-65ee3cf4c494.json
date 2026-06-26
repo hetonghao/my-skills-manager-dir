@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "f64ec816-de49-46ec-aace-65ee3cf4c494",
+  "path": "zoom-out",
+  "path_key": "zoom-out",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "mattpocock/skills/zoom-out",
+    "subpath": "skills",
+    "branch": null
+  }
+}
