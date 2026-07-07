@@ -21,6 +21,10 @@
 
 set -u
 
+# issue #195: per-invocation opt-out (PLANNING_DISABLED=1) for one-shot/CI
+# sessions that share a cwd with a plan but never opted into it.
+[ "${PLANNING_DISABLED:-}" = "1" ] && exit 0
+
 CONTEXT="userprompt"
 for arg in "$@"; do
     case "$arg" in
@@ -69,7 +73,13 @@ canonicalize() {
 # and python; the SLUG_RE check already blocks traversal in the slug name.
 is_within_root() {
     candidate="$1"
-    root_real="$(canonicalize "${PWD}")" || root_real=""
+    # Canonicalize the root via the relative token "." rather than the $PWD
+    # string. On some Windows/MSYS setups (8.3 short names, the /tmp mount
+    # alias) realpath("$PWD") and realpath(relative-candidate) resolve through
+    # different code paths and land on differently-spelled-but-equal targets,
+    # so the prefix match below fails and injection silently goes dark. "."
+    # resolves through the same physical-cwd path candidates already use.
+    root_real="$(canonicalize ".")" || root_real=""
     cand_real="$(canonicalize "${candidate}")" || cand_real=""
     if [ -z "${root_real}" ] || [ -z "${cand_real}" ]; then
         return 0
