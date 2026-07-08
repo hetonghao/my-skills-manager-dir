@@ -18,6 +18,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { heygenAuthHeaders, heygenCredential, heygenJSON } from "./heygen.mjs";
+import { pythonInvocation } from "./python.mjs";
 
 // ── provider detection ────────────────────────────────────────────────────────
 export function heygenAvailable() {
@@ -25,7 +26,8 @@ export function heygenAvailable() {
 }
 export function elevenlabsAvailable() {
   if (!process.env.ELEVENLABS_API_KEY) return false;
-  const r = spawnSync("python3", ["-c", "import elevenlabs"], {
+  const { cmd, args } = pythonInvocation(["-c", "import elevenlabs"]);
+  const r = spawnSync(cmd, args, {
     stdio: "ignore",
   });
   return r.status === 0;
@@ -153,6 +155,13 @@ export function resolveSpawnCommand(
 // `platform`/`spawnFn` params (default process.platform / the real spawn)
 // exist so tests can exercise the win32 branch without mocking node:child_process
 // (its ESM exports are non-configurable, so mock.method can't patch it).
+// One-shot so a whole batch of TTS lines doesn't repeat the same diagnostic.
+let _warnedNpxResolution = false;
+/** Test-only: reset the one-shot npx-resolution warning latch. */
+export function _resetNpxResolutionWarnForTests() {
+  _warnedNpxResolution = false;
+}
+
 export function spawnP(
   cmd,
   args,
@@ -163,7 +172,23 @@ export function spawnP(
   pathExists = existsSync,
 ) {
   const resolved = resolveSpawnCommand(cmd, args, opts, platform, env, pathExists);
-  if (!resolved) return Promise.resolve({ status: -1 });
+  if (!resolved) {
+    // resolveSpawnCommand only returns null for the npx-on-win32 case where
+    // npm_execpath isn't set (e.g. audio.mjs invoked directly with `node`, not
+    // through npm/npx). Without this, every call silently returns status:-1 and
+    // stdio:"ignore" hides why — callers just report "TTS failed - omitted" for
+    // every line. Surface the real reason once so it's diagnosable.
+    if (!_warnedNpxResolution) {
+      _warnedNpxResolution = true;
+      console.error(
+        `[media-use] Cannot run "${cmd}" on Windows: npm_execpath is not set, so the ` +
+          `npx JS CLI can't be located. This happens when this script is run directly with ` +
+          `\`node\` instead of through npm/npx. Every "${cmd}" call is being skipped. ` +
+          `Fix: run via \`npx\`/\`npm run\`, or export npm_execpath pointing at your npm-cli.js.`,
+      );
+    }
+    return Promise.resolve({ status: -1 });
+  }
   return new Promise((resolve) => {
     const p = spawnFn(resolved.cmd, resolved.args, resolved.opts);
     p.on("exit", (code) => resolve({ status: code ?? -1 }));
@@ -214,11 +239,26 @@ export async function synthesizeOne({
 }) {
   if (provider === "heygen") return synthesizeHeygen({ text, voiceId, lang, speed, wavAbs });
   if (provider === "elevenlabs") {
-    const r = await spawnP(
-      "python3",
-      ["-c", ELEVENLABS_PY, writeTmpText(text), voiceId, wavAbs],
-      {},
-    );
+    // The Python helper writes straight to wavAbs; unlike heygen (transcodeToWav)
+    // and kokoro (the `hyperframes tts` CLI), it does NOT create the parent dir,
+    // so on a fresh project (no assets/voice/ yet) the save fails and the line is
+    // silently dropped as "TTS failed - omitted". Create it first, like the other
+    // providers do. Guarded so a mkdir failure (EACCES/EROFS) returns
+    // { ok:false } like the rest of this branch rather than throwing (the
+    // function's contract is "never throws; failures return { ok:false }").
+    try {
+      mkdirSync(dirname(wavAbs), { recursive: true });
+    } catch {
+      return { ok: false, words: null };
+    }
+    const { cmd, args } = pythonInvocation([
+      "-c",
+      ELEVENLABS_PY,
+      writeTmpText(text),
+      voiceId,
+      wavAbs,
+    ]);
+    const r = await spawnP(cmd, args, {});
     return { ok: r.status === 0 && existsSync(wavAbs), words: null };
   }
   // kokoro — via the published CLI; --output is relative to the project dir.
