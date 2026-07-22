@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "skill_id": "e2ff4ba1-f5af-41d3-a48e-0ea1ca7108e0",
+  "path": "tavily-search",
+  "path_key": "tavily-search",
+  "enabled": true,
+  "tags": [],
+  "source": {
+    "type": "skillssh",
+    "ref": "tavily-ai/skills/tavily-search",
+    "subpath": "skills/tavily-search",
+    "branch": null
+  }
+}
