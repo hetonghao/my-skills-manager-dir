@@ -4,7 +4,9 @@
   "path": "modern-web-guidance",
   "path_key": "modern-web-guidance",
   "enabled": true,
-  "tags": [],
+  "tags": [
+    "前端设计"
+  ],
   "source": {
     "type": "skillssh",
     "ref": "googlechrome/modern-web-guidance/modern-web-guidance",

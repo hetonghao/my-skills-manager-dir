@@ -4,7 +4,9 @@
   "path": "swiftui-pro",
   "path_key": "swiftui-pro",
   "enabled": true,
-  "tags": [],
+  "tags": [
+    "前端设计"
+  ],
   "source": {
     "type": "skillssh",
     "ref": "twostraws/swiftui-agent-skill/swiftui-pro",
